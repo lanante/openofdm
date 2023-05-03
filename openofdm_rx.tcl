@@ -265,11 +265,81 @@ set files [list \
  "[file normalize "$origin_dir/verilog/delayT.v"]"\
  "[file normalize "$origin_dir/verilog/fifo_sample_delay.v"]"\
  "[file normalize "$origin_dir/verilog/common_defs.v"]"\
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_avg_lts_M_real_V.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_ch_gain_cal_Pipeline_ht_lts.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_ch_gain_cal_Pipeline_ht_lts_HT_LTS_REF_V.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_ch_gain_cal_Pipeline_ht_lts_HT_LTS_REF_V.dat"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_ch_gain_cal_Pipeline_l_lts.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_ch_gain_cal_Pipeline_l_lts_LTS_REF_V.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_ch_gain_cal_Pipeline_l_lts_LTS_REF_V.dat"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_ch_gain_cal_Pipeline_new_lts_out.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_ch_gain_cal_Pipeline_new_lts_smooth_out.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_first_lts_M_real_V.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_flow_control_loop_pipe_sequential_init.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_moving_avg.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_moving_avg_Pipeline_clear.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_moving_avg_Pipeline_outer.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_moving_avg_Pipeline_outer_ACTIVE_SC_IDX_52.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_moving_avg_Pipeline_outer_ACTIVE_SC_IDX_52.dat"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_mul_16s_2s_16_1_1.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_mul_mul_16s_17ns_34_4_1.v"] \
+ [file normalize "${origin_dir}/hls/ch_gain_cal/hdl/verilog/ch_gain_cal_mux_83_16_1_1.v"] \
  "[file normalize "$origin_dir/verilog/demodulate.v"]"\
  "[file normalize "$origin_dir/verilog/descramble.v"]"\
  "[file normalize "$origin_dir/verilog/divider.v"]"\
  "[file normalize "$origin_dir/verilog/dot11.v"]"\
- "[file normalize "$origin_dir/verilog/equalizer.v"]"\
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_POLARITY_V.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_POLARITY_V.dat"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_atan_lut_V.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_atan_lut_V.dat"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_cpe_estimate.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_cpe_estimate_Pipeline_cpe_est.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_equalizer_Pipeline_lts_pilot.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_equalizer_Pipeline_symbol_iq.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_equalizer_Pipeline_eq_per_sym.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_equalizer_Pipeline_lvpe_corr.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_flow_control_loop_pipe_sequential_init.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_equalizer_Pipeline_lvpe_est.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_lvpe_correction.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_mulsub_16s_16s_25s_25_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mul_mul_16s_16s_25_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_muladd_12s_6s_19s_19_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_muladd_16s_16s_22s_22_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_muladd_16s_16s_28s_28_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_muladd_16s_16s_32s_33_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_muladd_18s_7s_16s_18_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_muladd_18s_7s_12s_18_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_mulsub_16s_13s_28s_28_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_mulsub_16s_16s_22s_22_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mac_mulsub_16s_16s_32s_32_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mul_24s_26ns_50_1_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mul_26s_28ns_52_3_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mul_mul_13s_16s_28_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mul_mul_16s_16s_22_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mul_mul_16s_16s_28_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mul_mul_16s_16s_32_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mul_mul_19s_7s_26_4_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mux_42_16_1_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mux_42_1_1_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mux_42_1_1_1_x.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_mux_42_6_1_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_rotate.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_rotate_rotate_I_V.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_rotate_rotate_I_V.dat"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_rotate_rotate_Q_V.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_rotate_rotate_Q_V.dat"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_sdiv_32ns_24s_16_36_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_sym_phase_V.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_symbol_iq_M_real_V.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_udiv_32ns_23ns_32_36_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_udiv_32ns_23ns_32_36_seq_1.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_DATA_SC_IDX_48_V.dat"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_DATA_SC_IDX_48_V.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_DATA_SC_IDX_52_V.dat"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_DATA_SC_IDX_52_V.v"] \
+ [file normalize "${origin_dir}/hls/equalizer/hdl/verilog/equalizer_cpe_estimate.v"] \
  "[file normalize "$origin_dir/verilog/ht_sig_crc.v"]"\
  "[file normalize "$origin_dir/verilog/moving_avg.v"]"\
  "[file normalize "$origin_dir/verilog/mv_avg.v"]"\

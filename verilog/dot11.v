@@ -80,7 +80,6 @@ module dot11 (
     // equalizer
     `DEBUG_PREFIX output [31:0] equalizer_out,
     `DEBUG_PREFIX output equalizer_out_strobe,
-    `DEBUG_PREFIX output [3:0] equalizer_state,
     `DEBUG_PREFIX output wire ofdm_symbol_eq_out_pulse,
 
     // legacy signal info
@@ -150,16 +149,16 @@ end
 ////////////////////////////////////////////////////////////////////////////////
 // extra info output to ease side info and viterbi state monitor
 ////////////////////////////////////////////////////////////////////////////////
-`DEBUG_PREFIX reg  [3:0] equalizer_state_reg;
+reg equalizer_out_strobe_reg;
 
-assign ofdm_symbol_eq_out_pulse = (equalizer_state==4 && equalizer_state_reg==8);
+assign ofdm_symbol_eq_out_pulse = ~equalizer_out_strobe&equalizer_out_strobe_reg;
 
 always @(posedge clock) begin
     if (reset_without_watchdog==1) begin
         state_history <= 0;
-        equalizer_state_reg <= 0;
+        equalizer_out_strobe_reg <= 0;
     end else begin
-        equalizer_state_reg <= equalizer_state;
+        equalizer_out_strobe_reg <= equalizer_out_strobe;
         if (state_changed) begin
             state_history[3:0] <= state;
             state_history[31:4] <= state_history[27:0];
@@ -170,28 +169,21 @@ end
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Shared rotation LUT for sync_long and equalizer
+// Rotation LUT for sync_long 
 ////////////////////////////////////////////////////////////////////////////////
 wire [`ROTATE_LUT_LEN_SHIFT-1:0] sync_long_rot_addr;
 wire [31:0] sync_long_rot_data;
 
-wire [`ROTATE_LUT_LEN_SHIFT-1:0] eq_rot_addr;
-wire [31:0] eq_rot_data;
-
 rot_lut rot_lut_inst (
     .clka(clock),
     .addra(sync_long_rot_addr),
-    .douta(sync_long_rot_data),
-
-    .clkb(clock),
-    .addrb(eq_rot_addr),
-    .doutb(eq_rot_data)
+    .douta(sync_long_rot_data)
 );
 ////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////////////////////////
-// Shared phase module for sync_short and equalizer
+// Phase module for sync_short
 ////////////////////////////////////////////////////////////////////////////////
 wire [31:0] sync_short_phase_in_i;
 wire [31:0] sync_short_phase_in_q;
@@ -199,62 +191,60 @@ wire sync_short_phase_in_stb;
 wire [15:0] sync_short_phase_out;
 wire sync_short_phase_out_stb;
 
-wire [31:0] eq_phase_in_i;
-wire [31:0] eq_phase_in_q;
-wire eq_phase_in_stb;
-wire [15:0] eq_phase_out;
-wire eq_phase_out_stb;
-
-wire[31:0] phase_in_i = state == S_SYNC_SHORT?
-    sync_short_phase_in_i: eq_phase_in_i;
-wire[31:0] phase_in_q = state == S_SYNC_SHORT?
-    sync_short_phase_in_q: eq_phase_in_q;
-wire phase_in_stb = state == S_SYNC_SHORT?
-    sync_short_phase_in_stb: eq_phase_in_stb;
-
-wire [15:0] phase_out;
-wire phase_out_stb;
-
-assign sync_short_phase_out = phase_out;
-assign sync_short_phase_out_stb = phase_out_stb;
-assign eq_phase_out = phase_out;
-assign eq_phase_out_stb = phase_out_stb;
-
 phase phase_inst (
     .clock(clock),
     .reset(reset),
     .enable(enable),
 
-    .in_i(phase_in_i),
-    .in_q(phase_in_q),
-    .input_strobe(phase_in_stb),
+    .in_i(sync_short_phase_in_i),
+    .in_q(sync_short_phase_in_q),
+    .input_strobe(sync_short_phase_in_stb),
 
-    .phase(phase_out),
-    .output_strobe(phase_out_stb)
+    .phase(sync_short_phase_out),
+    .output_strobe(sync_short_phase_out_stb)
 );
 ////////////////////////////////////////////////////////////////////////////////
 
 reg sync_short_reset;
 reg sync_long_reset;
-// wire sync_short_enable = state == S_SYNC_SHORT;
 wire sync_short_enable = 1;
 reg sync_long_enable;
 wire [15:0] num_ofdm_symbol;
 
+reg ch_gain_cal_start; 
+wire ch_gain_cal_done; 
+wire ch_gain_cal_idle; 
+wire ch_gain_cal_strobe; 
+wire [31:0] ch_gain_cal_raddr; 
+wire signed [31:0] new_lts_out;
+wire new_lts_stb;
+reg smooth;
+
+reg [5:0] lts_waddr;
+reg [5:0] lts_raddr; 
+reg [15:0] lts_i_in;
+reg [15:0] lts_q_in;
+reg lts_in_stb;
+wire signed [15:0] lts_i_out;
+wire signed [15:0] lts_q_out;
+
 reg equalizer_reset;
 reg equalizer_enable;
 
-reg ht_next;
-
 wire eq_out_stb_delayed;
-wire [15:0] eq_out_i = equalizer_out[31:16];
-wire [15:0] eq_out_q = equalizer_out[15:0];
+wire [15:0] eq_out_i = equalizer_out[15:0];
+wire [15:0] eq_out_q = equalizer_out[31:16];
 wire [15:0] eq_out_i_delayed;
 wire [15:0] eq_out_q_delayed;
+wire [31:0] equalizer_raddr;
+wire equalizer_done; 
+reg signed [31:0] prev_PEG; 
+wire signed [31:0] prev_PEG_store; 
 reg [15:0] abs_eq_i;
 reg [15:0] abs_eq_q;
 reg [3:0] rot_eq_count;
 reg [3:0] normal_eq_count;
+wire [14:0] eq_nof_ofdm_sym; 
 
 // OFDM control
 reg ofdm_reset;
@@ -281,6 +271,9 @@ assign legacy_len = signal_bits[16:5];
 assign legacy_sig_parity = signal_bits[17];
 assign legacy_sig_tail = signal_bits[23:18];
 assign legacy_sig_parity_ok = ~^signal_bits[17:0];
+
+// Start with min. 3 symbols, switch to n_ofdm_sym once known
+assign eq_nof_ofdm_sym = phy_len_valid ? (pkt_ht ? n_ofdm_sym : n_ofdm_sym+1) : 3; 
 
 // HT-SIG information
 reg [23:0] ht_sig1;
@@ -329,6 +322,10 @@ assign byte_reversed[6] = byte_out[1];
 assign byte_reversed[7] = byte_out[0];
 
 reg [15:0] sync_long_out_count;
+
+// For side channel 
+assign csi = {lts_i_in, lts_q_in};
+assign csi_valid = enable && ~reset && lts_in_stb;
 
 /*
 power_trigger power_trigger_inst (
@@ -397,35 +394,63 @@ sync_long sync_long_inst (
     .num_ofdm_symbol(num_ofdm_symbol)
 );
 
+ram_2port #(.DWIDTH(32), .AWIDTH(6)) lts_inst (
+    .clka(clock),
+    .ena(1),
+    .wea(lts_in_stb),
+    .addra(lts_waddr),
+    .dia({lts_i_in, lts_q_in}),
+    .doa(),
+    .clkb(clock),
+    .enb(1),
+    .web(1'b0),
+    .addrb(lts_raddr),
+    .dib(32'hFFFF),
+    .dob({lts_i_out, lts_q_out})
+);
+
+ch_gain_cal ch_gain_cal_inst (
+    .ap_clk(clock),
+    .ap_rst(reset),
+    .ap_start(ch_gain_cal_start),
+    .ap_done(ch_gain_cal_done),
+    .ap_idle(ch_gain_cal_idle),
+    .ap_ready(),
+    .lts_iq_fd_V_dout(sync_long_out),
+    .lts_iq_fd_V_empty_n(sync_long_out_strobe),
+    .lts_iq_fd_V_read(),
+    .new_lts_Addr_A(ch_gain_cal_raddr),
+    .new_lts_EN_A(),
+    .new_lts_WEN_A(ch_gain_cal_strobe),
+    .new_lts_Din_A(new_lts_out),
+    .smooth(smooth),
+    .ltf_type(pkt_ht)
+);
+
 equalizer equalizer_inst (
-    .clock(clock),
-    .reset(reset | equalizer_reset),
-    .enable(enable & equalizer_enable),
-
-    .sample_in(sync_long_out),
-    .sample_in_strobe(sync_long_out_strobe && !(state==S_HT_SIGNAL && num_ofdm_symbol==6)),
-    .ht_next(ht_next),
-    .pkt_ht(pkt_ht),
-    .ht_smoothing(ht_smoothing|force_ht_smoothing),
-    .disable_all_smoothing(disable_all_smoothing),
-
-    .phase_in_i(eq_phase_in_i),
-    .phase_in_q(eq_phase_in_q),
-    .phase_in_stb(eq_phase_in_stb),
-
-    .phase_out(eq_phase_out),
-    .phase_out_stb(eq_phase_out_stb),
-
-    .rot_addr(eq_rot_addr),
-    .rot_data(eq_rot_data),
-
-    .sample_out(equalizer_out),
-    .sample_out_strobe(equalizer_out_strobe),
-
-    .state(equalizer_state),
-
-    .csi(csi),
-    .csi_valid(csi_valid)
+    .ap_clk(clock),
+    .ap_rst(reset|equalizer_reset),
+    .ap_start(enable & equalizer_enable),
+    .ap_done(equalizer_done),
+    .ap_idle(),
+    .ap_ready(),
+    .sample_in_V_dout({sync_long_out[15:0], sync_long_out[31:16]}),
+    .sample_in_V_empty_n(sync_long_out_strobe && equalizer_enable && !(state==S_HT_SIGNAL && num_ofdm_symbol==6) && !(state==S_HT_STS || state==S_HT_LTS)), 
+    .sample_in_V_read(), // assume always ready to read (latency lower than period of FFT output)
+    .sample_out_V_din(equalizer_out),
+    .sample_out_V_full_n(1'b1),
+    .sample_out_V_write(equalizer_out_strobe),
+    .new_lts_Addr_A(equalizer_raddr),
+    .new_lts_EN_A(new_lts_stb),
+    .new_lts_WEN_A(),
+    .new_lts_Din_A(),
+    .new_lts_Dout_A({lts_q_out, lts_i_out}),
+    .new_lts_Clk_A(),
+    .new_lts_Rst_A(),
+    .nof_ofdm_sym(eq_nof_ofdm_sym),
+    .ht(pkt_ht), 
+    .prev_PEG(prev_PEG), 
+    .ap_return(prev_PEG_store)
 );
 
 
@@ -433,7 +458,7 @@ delayT #(.DATA_WIDTH(33), .DELAY(9)) eq_delay_inst (
     .clock(clock),
     .reset(reset),
 
-    .data_in({equalizer_out_strobe, equalizer_out}),
+    .data_in({equalizer_out_strobe, {eq_out_i, eq_out_q}}),
     .data_out({eq_out_stb_delayed, eq_out_i_delayed, eq_out_q_delayed})
 );
 
@@ -523,6 +548,7 @@ always @(posedge clock) begin
         pkt_header_valid_strobe <= 0;
         ht_unsupport <= 0;
 
+        prev_PEG <= 0;
         rot_eq_count <= 0;
         normal_eq_count <= 0;
         abs_eq_i <= 0;
@@ -533,9 +559,16 @@ always @(posedge clock) begin
         short_gi <= 0;
         pkt_rate <= 0;
 
+        ch_gain_cal_start <= 0; 
+        smooth <= 0;
+        lts_waddr <= 0;
+        lts_raddr <= 0;
+        lts_i_in <= 0;
+        lts_q_in <= 0;
+        lts_in_stb <= 0;
+
         equalizer_reset <= 0;
         equalizer_enable <= 0;
-        ht_next <= 0;
 
         pkt_len_rem <= 0;
         mpdu_del_crc <= 0;
@@ -571,6 +604,12 @@ always @(posedge clock) begin
     end else if (enable) begin
         old_state <= state;
 
+        if (new_lts_stb == 1) begin
+            lts_raddr <= (equalizer_raddr >> 2);
+        end else begin
+            lts_raddr <= 0; 
+        end
+
         case(state)
             S_WAIT_POWER_TRIGGER: begin
                 sync_short_reset <= 0;
@@ -588,6 +627,7 @@ always @(posedge clock) begin
                 ht_sig1 <= 0;
                 ht_sig2 <= 0;
                 pkt_len_rem <= 0;
+                prev_PEG <= 0; 
 
                 if (power_trigger) begin
                     `ifdef DEBUG_PRINT
@@ -641,23 +681,38 @@ always @(posedge clock) begin
                     pkt_rate <= {1'b0, 3'b0, 4'b1011};
                     do_descramble <= 0;
                     num_bits_to_decode <= 24;
-
-                    ofdm_reset <= 1;
-                    ofdm_enable <= 1;
-
-                    equalizer_enable <= 1;
-                    equalizer_reset <= 1;
-
                     byte_count <= 0;
                     byte_count_total <= 0;
-                    state <= S_DECODE_SIGNAL;
+                    state <= S_CH_GAIN_CAL;
                     sync_short_reset <= 1;
                 end
             end
 
-            S_DECODE_SIGNAL: begin
+            S_CH_GAIN_CAL: begin 
                 sync_short_reset <= 0;
+                if (ch_gain_cal_strobe) begin
+                    lts_waddr <= (ch_gain_cal_raddr >> 2);
+                    lts_i_in <= new_lts_out[31:16];
+                    lts_q_in <= new_lts_out[15:0]; 
+                end
+                lts_in_stb <= ch_gain_cal_strobe; 
+
+                if (ch_gain_cal_idle && ~ch_gain_cal_start) begin
+                    ch_gain_cal_start <= 1; 
+                    smooth <= disable_all_smoothing?0:1;
+                end else if (ch_gain_cal_done) begin 
+                    ch_gain_cal_start <= 0; 
+                    equalizer_enable <= 1;
+                    equalizer_reset <= 1;
+                    ofdm_reset <= 1;
+                    ofdm_enable <= 1;
+                    state <= S_DECODE_SIGNAL;
+                end
+            end
+
+            S_DECODE_SIGNAL: begin
                 ofdm_reset <= 0;
+                lts_in_stb <= 0;
 
                 if (equalizer_reset) begin
                     equalizer_reset <= 0;
@@ -773,6 +828,10 @@ always @(posedge clock) begin
             S_HT_SIGNAL: begin
                 ofdm_reset <= 0;
 
+                if (equalizer_done) begin
+                    prev_PEG <= prev_PEG_store; 
+                end
+
                 ofdm_in_stb <= eq_out_stb_delayed;
                 // rotate clockwise by 90 degree
                 ofdm_in_i <= eq_out_q_delayed;
@@ -815,6 +874,8 @@ always @(posedge clock) begin
                     crc_reset <= 1;
                     crc_in_stb <= 0;
                     ht_sig_crc_ok <= 0;
+                    equalizer_reset <= 1; 
+                    equalizer_enable <= 0; 
                     state <= S_CHECK_HT_SIG_CRC;
                 end
             end
@@ -895,7 +956,6 @@ always @(posedge clock) begin
                     if (num_ofdm_symbol == 5) begin
                         state <= S_HT_STS;
                     end else begin
-                        ht_next <= 1;
                         state <= S_HT_LTS;
                     end
                 end
@@ -917,21 +977,28 @@ always @(posedge clock) begin
                 end
                 if (sync_long_out_count == 64) begin
                     sync_long_out_count <= 0;
-                    ht_next <= 1;
                     state <= S_HT_LTS;
                 end
             end
 
             S_HT_LTS: begin
                 short_gi <= ht_sgi;
-                if (sync_long_out_strobe) begin
-                    sync_long_out_count <= sync_long_out_count + 1;
+                if (ch_gain_cal_strobe) begin
+                    lts_waddr <= (ch_gain_cal_raddr >> 2);
+                    lts_i_in <= new_lts_out[31:16];
+                    lts_q_in <= new_lts_out[15:0]; 
                 end
-                if (sync_long_out_count == 64) begin
-                    ht_next <= 0;
-                    //num_bits_to_decode <= (ht_len+3)<<4;
+                lts_in_stb <= ch_gain_cal_strobe; 
+
+                if (ch_gain_cal_idle && ~ch_gain_cal_start) begin
+                    ch_gain_cal_start <= 1; 
+                    smooth <= (ht_smoothing & ~disable_all_smoothing);
+                end else if (ch_gain_cal_done) begin 
+                    ch_gain_cal_start <= 0; 
                     do_descramble <= 1;
                     ofdm_reset <= 1;
+                    equalizer_enable <= 1; 
+                    equalizer_reset <= 0; 
                     if(ht_aggr) begin
                         crc_reset <= 1;
                         crc_count <= 0;

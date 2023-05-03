@@ -27,20 +27,21 @@ localparam SR_MIN_PLATEAU =                 6;
 localparam S_WAIT_POWER_TRIGGER =   0;
 localparam S_SYNC_SHORT =           1;
 localparam S_SYNC_LONG =            2;
-localparam S_DECODE_SIGNAL =        3;
-localparam S_CHECK_SIGNAL =         4;
-localparam S_DETECT_HT =            5;
-localparam S_HT_SIGNAL =            6;
-localparam S_CHECK_HT_SIG_CRC =     7;
-localparam S_CHECK_HT_SIG =         8;
-localparam S_HT_STS =               9;
-localparam S_HT_LTS =               10;
-localparam S_MPDU_DELIM =           11;
-localparam S_DECODE_DATA =          12;
-localparam S_MPDU_PAD =             13;
-localparam S_SIGNAL_ERROR =         14;
-localparam S_HT_SIG_ERROR =         15;
-localparam S_DECODE_DONE =          16;
+localparam S_CH_GAIN_CAL =          3;
+localparam S_DECODE_SIGNAL =        4;
+localparam S_CHECK_SIGNAL =         5;
+localparam S_DETECT_HT =            6;
+localparam S_HT_SIGNAL =            7;
+localparam S_CHECK_HT_SIG_CRC =     8;
+localparam S_CHECK_HT_SIG =         9;
+localparam S_HT_STS =               10;
+localparam S_HT_LTS =               11;
+localparam S_MPDU_DELIM =           12;
+localparam S_DECODE_DATA =          13;
+localparam S_MPDU_PAD =             14;
+localparam S_SIGNAL_ERROR =         15;
+localparam S_HT_SIG_ERROR =         16;
+localparam S_DECODE_DONE =          17;
 
 
 //////////////////////////////////////////////////////////////////////////

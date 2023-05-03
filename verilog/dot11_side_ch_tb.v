@@ -567,7 +567,6 @@ dot11 dot11_inst (
 
     .equalizer_out(equalizer_out),
     .equalizer_out_strobe(equalizer_out_strobe),
-    .equalizer_state(equalizer_state),
     .ofdm_symbol_eq_out_pulse(ofdm_symbol_eq_out_pulse),
 
     .legacy_sig_stb(legacy_sig_stb),

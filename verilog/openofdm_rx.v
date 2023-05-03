@@ -230,7 +230,6 @@
 		// equalizer
 		.equalizer_out(equalizer),
 		.equalizer_out_strobe(equalizer_valid),
-		.equalizer_state(),
 		.ofdm_symbol_eq_out_pulse(ofdm_symbol_eq_out_pulse),
 
 		// legacy signal info
